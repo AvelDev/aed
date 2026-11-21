@@ -970,6 +970,7 @@ CELERY_TASK_ROUTES = {
     "mcod.submissions.tasks.generate_statistical_report_for_all_submissions_task": {"queue": "reports"},
     "mcod.resources.tasks.check_link_protocol": {"queue": "resources"},
     "mcod.resources.tasks.create_main_dga_resource_task": {"queue": "resources"},
+    "mcod.resources.tasks.create_aed_dataset_task": {"queue": "resources"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_index": {"queue": "indexing_data"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_indexes_for_organization": {"queue": "indexing_data"},
     "mcod.resources.tasks.entrypoint_process_resource_file_validation_task": {"queue": "resources"},
@@ -1746,6 +1747,26 @@ MAIN_DGA_DATASET_TAGS_NAMES = [
     "akt o zarządzaniu danymi",
     "chronione dane",
 ]
+
+# Łączona baza defibrylatorów AED (mcod.resources.aed_aggregation / create_aed_dataset_task)
+AED_DATASET_CREATION_ROOT = str(ROOT_DIR.path(MEDIA_ROOT, "aed_aggregation"))
+AED_DATASET_OWNER_ORGANIZATION_PK = env.int("AED_DATASET_OWNER_ORGANIZATION_PK", default=None)
+AED_DATASET_TITLE = "Defibrylatory AED w Polsce – zbiór łączony"
+AED_DATASET_DESC = (
+    "Ogólnopolski wykaz automatycznych defibrylatorów zewnętrznych (AED) połączony automatycznie "
+    "ze wszystkich zbiorów o defibrylatorach opublikowanych w portalu dane.gov.pl. Każdy rekord "
+    "wskazuje dysponenta danych, zbiór źródłowy i licencję."
+)
+AED_DATASET_UPDATE_FREQUENCY = "daily"
+AED_DATASET_CATEGORIES_TITLES = ["Zdrowie"]
+AED_DATASET_TAGS_NAMES = ["AED", "defibrylator", "defibrylatory", "pierwsza pomoc"]
+AED_RESOURCE_DEFAULT_TITLE = "Defibrylatory AED – wykaz zbiorczy"
+AED_RESOURCE_DEFAULT_DESC = "Wykaz defibrylatorów AED połączony z danych udostępnionych w portalu dane.gov.pl."
+AED_RESOURCE_EXT_IDENT = "aed-aggregate"
+# Źródła dostępne tylko przez API z kluczem, np.:
+# [{"link_prefix": "https://...", "api_url": "https://...", "method": "POST",
+#   "auth_header": "Authorization", "token_env": "NAZWA_ZMIENNEJ"}]
+AED_AUTHENTICATED_SOURCES = env.json("AED_AUTHENTICATED_SOURCES", default=[])
 
 PASSWORD_RESET_PATH = "/user/reset-password/%s/"
 EMAIL_VALIDATION_PATH = "/user/verify-email/%s/"

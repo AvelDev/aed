@@ -1,0 +1,17 @@
+# poza zgłoszeniem
+misja-aed/
+[[]Ministerstwo*/
+.impeccable/
+
+# zależności / buildy
+node_modules/
+.angular/
+__pycache__/
+*.py[cod]
+.venv/
+
+# sekrety
+.env
+.env.*
+!.env.example
+

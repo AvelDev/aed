@@ -1,0 +1,10 @@
+[
+  {
+    "zrodlo_zbior_id": 4213,
+    "zrodlo_zbior_tytul": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+    "wiersz": 7,
+    "id_zrodlowe": "7",
+    "powod": "wspolrzedne_odlegle",
+    "dane_zrodlowe": "{\"Długość geograficzna\": \"21.72034402175176\", \"Szerokość geograficzna\": \"49.718809346153336\", \"Nazwa\": \"Defibrylator\", \"Lokalizacja\": \"Szkoła Podstawowa nr 5\", \"Adres\": \"ul. Wczsowa 5, 05-270 Marki\", \"Numer Id\": \"7\"}"
+  }
+]
