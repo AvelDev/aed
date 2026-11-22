@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "title": "AED Mission – nearest defibrillator",
+    "description": "Find the nearest AED defibrillator in Poland. Works offline, with no accounts and no tracking.",
+    "rkoTitle": "CPR guide – AED Mission",
+    "aboutTitle": "About the app – AED Mission"
+  },
+  "brand": {
+    "name": "AED Mission",
+    "state": "Republic of Poland",
+    "skipLink": "Skip to content"
+  },
+  "nav": {
+    "label": "Main menu",
+    "home": "AED map",
+    "rko": "CPR guide",
+    "about": "About the app",
+    "languageMenu": "Choose language"
+  },
+  "finder": {
+    "title": "Nearest AED defibrillator",
+    "denied": "Location access is blocked",
+    "deniedHelp": "Enter an address or town, or turn on location in your browser settings.",
+    "unavailable": "Could not determine your location",
+    "unavailableHelp": "Enter an address or town.",
+    "retry": "Try again",
+    "useLocation": "Use my location",
+    "nearest": "Nearest available AED",
+    "nearestRestricted": "Nearest AED (restricted access)",
+    "walk": "about {minutes} min on foot",
+    "direction": "Direction: {direction}",
+    "compass": {
+      "n": "north",
+      "ne": "northeast",
+      "e": "east",
+      "se": "southeast",
+      "s": "south",
+      "sw": "southwest",
+      "w": "west",
+      "nw": "northwest"
+    },
+    "route": "Show route",
+    "routeExternal": "Opens an external maps app",
+    "showOnMap": "Show on map",
+    "others": "Other AEDs nearby",
+    "noDescription": "No description of the place. Look for an AED sign at the building entrance.",
+    "originalLanguage": "Description in the original language",
+    "level": "Floor {level}",
+    "indoor": "Indoors",
+    "outdoor": "Outdoors",
+    "operator": "Data holder: {operator}",
+    "checked": "Checked: {date}",
+    "notChecked": "Date of last check unknown",
+    "noneNearby": "No AED within {km} km",
+    "noneNearbyHelp": "Call 112 and start CPR. The nearest known AED is {distance} away.",
+    "dataError": "Could not load AED data",
+    "dataErrorHelp": "Check your network connection and try again.",
+    "offlineNotice": "No network. Showing data saved on your phone.",
+    "dataDate": "Data from {date}",
+    "searchingFor": "Looking for AEDs near: {place}",
+    "map": {
+      "label": "Map of AED defibrillators",
+      "youAreHere": "Your location",
+      "unavailable": "The map is unavailable offline. The list works offline.",
+      "attribution": "Data: OpenStreetMap contributors",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "recenter": "Centre on me",
+      "hint": "The map supplements the list. Arrow keys pan the map.",
+      "legend": "Filled dot: can be used. Hollow dot: access uncertain or restricted."
+    },
+    "selected": "Selected AED",
+    "backToNearest": "Back to the nearest",
+    "noScript": "This app needs JavaScript. In an emergency, call 112.",
+    "progress": {
+      "title": "Looking for the nearest defibrillator",
+      "data": "Downloading defibrillator data",
+      "location": "Finding your location",
+      "nearest": "Choosing the nearest available AED",
+      "done": "done",
+      "active": "in progress",
+      "todo": "waiting",
+      "help": "Allow access to your location when the browser asks. Your location stays on your phone."
+    }
+  },
+  "status": {
+    "open247": "Available 24 hours",
+    "openNow": "Available now",
+    "closedNow": "Outside opening hours now",
+    "publicHoursUnknown": "Publicly accessible, hours unknown",
+    "customers": "For customers and guests",
+    "permit": "By permission",
+    "private": "Private, restricted access",
+    "noAccess": "No access",
+    "unknown": "Availability unknown",
+    "customersHelp": "In an emergency, ask staff or security for help and for the AED.",
+    "restrictedHelp": "Access may need the owner's permission. In an emergency, call 112 anyway.",
+    "hoursHelp": "The building may be closed. If no one is there, call 112.",
+    "hoursLabel": "Opening hours",
+    "hoursUnknown": "Hours unknown",
+    "hoursRaw": "As recorded in the data: {raw}",
+    "hoursOff": "closed",
+    "hoursPublicHolidays": "public holidays"
+  },
+  "search": {
+    "label": "Search for an address or town",
+    "placeholder": "e.g. Dworcowa 1, Kielce",
+    "submit": "Search",
+    "clear": "Clear search",
+    "searching": "Searching…",
+    "noResults": "No such place found in Poland.",
+    "error": "Address search is temporarily unavailable.",
+    "results": "Search results"
+  },
+  "rko": {
+    "title": "CPR guide",
+    "intro": "Cardiopulmonary resuscitation of an adult who is unresponsive and not breathing normally.",
+    "draftNotice": "Draft version. The text is based on ZPE educational material and awaits medical review.",
+    "stepsLabel": "Resuscitation steps",
+    "steps": {
+      "reaction": {
+        "title": "Check whether the person responds",
+        "body": "Gently shake them by the shoulders and ask loudly if they are all right."
+      },
+      "help": {
+        "title": "Shout for help",
+        "body": "Shout for someone to bring an AED and call 112. If you are alone, do it with your phone."
+      },
+      "airway": {
+        "title": "Open the airway and check breathing",
+        "body": "Tilt the head back and lift the chin. Look, listen and feel for breathing for no more than 10 seconds."
+      },
+      "call": {
+        "title": "Call 112",
+        "body": "If the person is not breathing normally, call 112 or 999. Switch on speakerphone."
+      },
+      "compress": {
+        "title": "Press on the chest",
+        "body": "Place your hands on the lower half of the breastbone with your arms straight. Press 5–6 cm deep, 100–120 times a minute."
+      },
+      "breaths": {
+        "title": "Rescue breaths",
+        "body": "If you are able and willing, give 2 calm breaths of about one second each after 30 compressions. If not, press without stopping."
+      },
+      "aed": {
+        "title": "When the AED arrives",
+        "body": "Switch it on, attach the pads as shown in the pictures and follow the voice prompts. Nobody touches the person while the rhythm is analysed."
+      },
+      "continue": {
+        "title": "Do not stop",
+        "body": "Carry on until the emergency services arrive, the person starts breathing normally or you are exhausted. If others can help, swap every 2 minutes."
+      }
+    },
+    "metronome": {
+      "title": "Compression rhythm",
+      "description": "The sound and the counter help you keep a pace of 110 compressions per minute.",
+      "start": "Start rhythm",
+      "stop": "Stop rhythm",
+      "count": "Compression {count} of 30",
+      "silentHint": "You can mute the sound on your phone. The counter keeps working."
+    },
+    "source": "Source: Zintegrowana Platforma Edukacyjna (zpe.gov.pl), material “Resuscytacja krążeniowo-oddechowa”. Text reworded.",
+    "findAed": "Find the nearest AED",
+    "callTitle": "Call 112 first",
+    "callHint": "The dispatcher will guide you through CPR over the phone. Switch on speakerphone.",
+    "callButton": "Call 112"
+  },
+  "about": {
+    "title": "About the app",
+    "lead": "A prototype prepared for the “AED Mission – Data to the Rescue” competition of the Ministry of Digital Affairs.",
+    "data": {
+      "title": "Data",
+      "body": "AED locations come from the combined list “AED defibrillators in Poland – combined dataset” on the dane.gov.pl portal, which merges AED datasets published by different providers (licence: {license}). The data may be incomplete or out of date. Number of points: {count}.",
+      "generated": "Data as of: {date}"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "body": "The app has no accounts and does not track users. Your location is processed only on your device and is not sent to a server. Address search sends only the text you type. Map tiles are loaded from OpenStreetMap servers, which can see your device's IP address."
+    },
+    "accessibility": {
+      "title": "Accessibility",
+      "body": "The app is designed to WCAG 2.2 level AA, and to AAA where possible. An accessibility statement will be published after an audit."
+    },
+    "openData": {
+      "title": "Open data",
+      "body": "The dataset can be downloaded as CSV and GeoJSON together with a metadata description. Contact details of device owners have been removed.",
+      "csv": "Download CSV",
+      "geojson": "Download GeoJSON",
+      "metadata": "Metadata description (JSON)"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "Check the address or go back to the map.",
+    "errorTitle": "Something went wrong",
+    "errorBody": "Try again. In an emergency, call 112.",
+    "retry": "Try again",
+    "backHome": "Back to the map"
+  },
+  "a11y": {
+    "nearestFound": "Nearest AED: {name}, {distance}, {status}",
+    "externalLink": "Opens in a new window",
+    "panel": "Accessibility",
+    "panelTitle": "Accessibility settings",
+    "textSize": "Text size",
+    "textNormal": "Standard",
+    "textLarge": "Large",
+    "textXL": "Largest",
+    "contrast": "High contrast",
+    "motion": "Reduce motion",
+    "reset": "Reset settings",
+    "close": "Close",
+    "sheetExpand": "Show details",
+    "sheetCollapse": "Hide details and show the map"
+  }
+}

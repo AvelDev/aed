@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "title": "Misja AED – najbliższy defibrylator",
+    "description": "Znajdź najbliższy defibrylator AED w Polsce. Działa bez sieci, bez kont i bez śledzenia.",
+    "rkoTitle": "Instrukcja RKO – Misja AED",
+    "aboutTitle": "O aplikacji – Misja AED"
+  },
+  "brand": {
+    "name": "Misja AED",
+    "state": "Rzeczpospolita Polska",
+    "skipLink": "Przejdź do treści"
+  },
+  "nav": {
+    "label": "Menu główne",
+    "home": "Mapa AED",
+    "rko": "Instrukcja RKO",
+    "about": "O aplikacji",
+    "languageMenu": "Wybierz język"
+  },
+  "finder": {
+    "title": "Najbliższy defibrylator AED",
+    "denied": "Brak dostępu do lokalizacji",
+    "deniedHelp": "Wpisz adres lub miejscowość albo włącz lokalizację w ustawieniach przeglądarki.",
+    "unavailable": "Nie udało się ustalić lokalizacji",
+    "unavailableHelp": "Wpisz adres lub miejscowość.",
+    "retry": "Spróbuj ponownie",
+    "useLocation": "Użyj mojej lokalizacji",
+    "nearest": "Najbliższy dostępny AED",
+    "nearestRestricted": "Najbliższy AED (dostęp ograniczony)",
+    "walk": "ok. {minutes} min pieszo",
+    "direction": "Kierunek: {direction}",
+    "compass": {
+      "n": "północ",
+      "ne": "północny wschód",
+      "e": "wschód",
+      "se": "południowy wschód",
+      "s": "południe",
+      "sw": "południowy zachód",
+      "w": "zachód",
+      "nw": "północny zachód"
+    },
+    "route": "Pokaż trasę",
+    "routeExternal": "Otwiera zewnętrzną aplikację map",
+    "showOnMap": "Pokaż na mapie",
+    "others": "Inne AED w pobliżu",
+    "noDescription": "Brak opisu miejsca. Szukaj oznaczenia AED przy wejściu do budynku.",
+    "originalLanguage": "Opis w języku oryginału",
+    "level": "Piętro {level}",
+    "indoor": "W budynku",
+    "outdoor": "Na zewnątrz",
+    "operator": "Dysponent danych: {operator}",
+    "checked": "Sprawdzono: {date}",
+    "notChecked": "Data ostatniego sprawdzenia nieznana",
+    "noneNearby": "Brak AED w promieniu {km} km",
+    "noneNearbyHelp": "Zadzwoń pod 112 i zacznij resuscytację. Najbliższy znany AED jest w odległości {distance}.",
+    "dataError": "Nie udało się wczytać danych o AED",
+    "dataErrorHelp": "Sprawdź połączenie z siecią i spróbuj ponownie.",
+    "offlineNotice": "Brak sieci. Pokazuję dane zapisane na telefonie.",
+    "dataDate": "Dane z dnia {date}",
+    "searchingFor": "Szukam AED w pobliżu: {place}",
+    "map": {
+      "label": "Mapa z defibrylatorami AED",
+      "youAreHere": "Twoja lokalizacja",
+      "unavailable": "Mapa jest niedostępna bez sieci. Lista działa bez sieci.",
+      "attribution": "Dane: autorzy OpenStreetMap",
+      "zoomIn": "Przybliż mapę",
+      "zoomOut": "Oddal mapę",
+      "recenter": "Wyśrodkuj na mnie",
+      "hint": "Mapa uzupełnia informacje z listy. Strzałki przesuwają mapę.",
+      "legend": "Pełne kółko: można podejść. Puste kółko: dostęp niepewny lub ograniczony."
+    },
+    "selected": "Wybrany AED",
+    "backToNearest": "Wróć do najbliższego",
+    "noScript": "Ta aplikacja wymaga JavaScript. W nagłym wypadku zadzwoń pod 112.",
+    "progress": {
+      "title": "Szukam najbliższego defibrylatora",
+      "data": "Pobieram dane o defibrylatorach",
+      "location": "Ustalam Twoją lokalizację",
+      "nearest": "Wybieram najbliższy dostępny AED",
+      "done": "gotowe",
+      "active": "w toku",
+      "todo": "czeka",
+      "help": "Zezwól na dostęp do lokalizacji, gdy przeglądarka o to zapyta. Lokalizacja zostaje na Twoim telefonie."
+    }
+  },
+  "status": {
+    "open247": "Dostępny całą dobę",
+    "openNow": "Dostępny teraz",
+    "closedNow": "Teraz poza godzinami dostępności",
+    "publicHoursUnknown": "Dostępny publicznie, godziny nieznane",
+    "customers": "Dla klientów i gości",
+    "permit": "Za zezwoleniem",
+    "private": "Prywatny, dostęp ograniczony",
+    "noAccess": "Brak dostępu",
+    "unknown": "Dostępność nieznana",
+    "customersHelp": "W nagłej sytuacji poproś obsługę lub ochronę o pomoc i o AED.",
+    "restrictedHelp": "Dostęp może wymagać zgody właściciela. W nagłej sytuacji i tak zadzwoń pod 112.",
+    "hoursHelp": "Budynek może być zamknięty. Jeśli nikogo nie ma, zadzwoń pod 112.",
+    "hoursLabel": "Godziny dostępności",
+    "hoursUnknown": "Godziny nieznane",
+    "hoursRaw": "Zapis w danych: {raw}",
+    "hoursOff": "nieczynne",
+    "hoursPublicHolidays": "święta"
+  },
+  "search": {
+    "label": "Szukaj adresu lub miejscowości",
+    "placeholder": "np. Dworcowa 1, Kielce",
+    "submit": "Szukaj",
+    "clear": "Wyczyść wyszukiwanie",
+    "searching": "Szukam…",
+    "noResults": "Nie znaleziono takiego miejsca w Polsce.",
+    "error": "Wyszukiwanie adresu jest chwilowo niedostępne.",
+    "results": "Wyniki wyszukiwania"
+  },
+  "rko": {
+    "title": "Instrukcja RKO",
+    "intro": "Resuscytacja krążeniowo-oddechowa dorosłej osoby, która nie reaguje i nie oddycha prawidłowo.",
+    "draftNotice": "Wersja robocza. Treść oparta na materiale edukacyjnym ZPE czeka na weryfikację medyczną.",
+    "stepsLabel": "Kroki resuscytacji",
+    "steps": {
+      "reaction": {
+        "title": "Sprawdź, czy osoba reaguje",
+        "body": "Delikatnie potrząśnij nią za ramiona i głośno zapytaj, czy wszystko w porządku."
+      },
+      "help": {
+        "title": "Zawołaj o pomoc",
+        "body": "Krzyknij, żeby ktoś przyniósł AED i zadzwonił pod 112. Jeśli jesteś sam, zrób to telefonem."
+      },
+      "airway": {
+        "title": "Udrożnij drogi oddechowe i sprawdź oddech",
+        "body": "Odchyl głowę do tyłu i unieś podbródek. Patrz, słuchaj i wyczuwaj oddech nie dłużej niż 10 sekund."
+      },
+      "call": {
+        "title": "Zadzwoń pod numer 112",
+        "body": "Jeśli osoba nie oddycha prawidłowo, zadzwoń pod 112 lub 999. Włącz tryb głośnomówiący."
+      },
+      "compress": {
+        "title": "Uciskaj klatkę piersiową",
+        "body": "Ułóż dłonie na dolnej połowie mostka, ramiona wyprostowane. Uciskaj na głębokość 5–6 cm, 100–120 razy na minutę."
+      },
+      "breaths": {
+        "title": "Oddechy ratownicze",
+        "body": "Jeśli potrafisz i chcesz, po 30 uciśnięciach wykonaj 2 spokojne oddechy, każdy trwający około sekundy. Jeśli nie, uciskaj bez przerwy."
+      },
+      "aed": {
+        "title": "Gdy dotrze AED",
+        "body": "Włącz go, naklej elektrody według rysunków i wykonuj polecenia głosowe. Podczas analizy rytmu nikt nie dotyka osoby."
+      },
+      "continue": {
+        "title": "Nie przerywaj",
+        "body": "Kontynuuj, aż przyjadą służby, osoba zacznie normalnie oddychać lub opadniesz z sił. Jeśli są inni ratownicy, zmieniajcie się co 2 minuty."
+      }
+    },
+    "metronome": {
+      "title": "Rytm uciśnięć",
+      "description": "Dźwięk i licznik pomagają utrzymać tempo 110 uciśnięć na minutę.",
+      "start": "Włącz rytm",
+      "stop": "Wyłącz rytm",
+      "count": "Uciśnięcie {count} z 30",
+      "silentHint": "Dźwięk można wyciszyć w telefonie. Licznik działa nadal."
+    },
+    "source": "Źródło: Zintegrowana Platforma Edukacyjna (zpe.gov.pl), materiał „Resuscytacja krążeniowo-oddechowa”. Treść przeformułowana.",
+    "findAed": "Znajdź najbliższy AED",
+    "callTitle": "Najpierw zadzwoń pod 112",
+    "callHint": "Dyspozytor poprowadzi Cię przez resuscytację przez telefon. Włącz tryb głośnomówiący.",
+    "callButton": "Zadzwoń pod 112"
+  },
+  "about": {
+    "title": "O aplikacji",
+    "lead": "Prototyp przygotowany na konkurs „Misja AED – Dane na ratunek” Ministerstwa Cyfryzacji.",
+    "data": {
+      "title": "Dane",
+      "body": "Lokalizacje AED pochodzą z wykazu zbiorczego „Defibrylatory AED w Polsce – zbiór łączony” w portalu dane.gov.pl, który łączy zbiory AED publikowane przez różnych dostawców (licencja: {license}). Dane mogą być niepełne lub nieaktualne. Liczba punktów: {count}.",
+      "generated": "Stan danych: {date}"
+    },
+    "privacy": {
+      "title": "Prywatność",
+      "body": "Aplikacja nie ma kont i nie śledzi użytkowników. Twoja lokalizacja jest przetwarzana tylko na urządzeniu i nie trafia na serwer. Wyszukiwanie adresu przesyła wyłącznie wpisany tekst. Kafelki mapy pobierane są z serwerów OpenStreetMap, które widzą adres IP urządzenia."
+    },
+    "accessibility": {
+      "title": "Dostępność",
+      "body": "Aplikacja jest projektowana zgodnie z WCAG 2.2 na poziomie AA, a tam gdzie to możliwe AAA. Deklaracja dostępności zostanie opublikowana po audycie."
+    },
+    "openData": {
+      "title": "Otwarte dane",
+      "body": "Zbiór można pobrać w formatach CSV i GeoJSON wraz z opisem metadanych. Dane kontaktowe właścicieli urządzeń zostały usunięte.",
+      "csv": "Pobierz CSV",
+      "geojson": "Pobierz GeoJSON",
+      "metadata": "Opis metadanych (JSON)"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "Nie ma takiej strony",
+    "notFoundBody": "Sprawdź adres albo wróć do mapy.",
+    "errorTitle": "Coś poszło nie tak",
+    "errorBody": "Spróbuj ponownie. W nagłym wypadku zadzwoń pod 112.",
+    "retry": "Spróbuj ponownie",
+    "backHome": "Wróć do mapy"
+  },
+  "a11y": {
+    "nearestFound": "Najbliższy AED: {name}, {distance}, {status}",
+    "externalLink": "Otwiera się w nowym oknie",
+    "panel": "Dostępność",
+    "panelTitle": "Ustawienia dostępności",
+    "textSize": "Rozmiar tekstu",
+    "textNormal": "Standardowy",
+    "textLarge": "Duży",
+    "textXL": "Największy",
+    "contrast": "Wysoki kontrast",
+    "motion": "Ogranicz animacje",
+    "reset": "Przywróć ustawienia",
+    "close": "Zamknij",
+    "sheetExpand": "Pokaż szczegóły",
+    "sheetCollapse": "Schowaj szczegóły i pokaż mapę"
+  }
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Misja AED</title>
+<style>
+  body { margin: 0; font: 400 1.125rem/1.5 "Source Sans 3", system-ui, sans-serif; color: #0f1d33; background: #fff; }
+  main { max-width: 36rem; margin: 0 auto; padding: 32px 20px; display: grid; gap: 16px; }
+  h1 { font-size: 1.75rem; margin: 0; }
+  p { margin: 0; }
+  a.sos { display: flex; justify-content: space-between; align-items: center; min-height: 84px; padding: 8px 20px; background: #b00d26; color: #fff; text-decoration: none; font-weight: 700; font-size: 1.25rem; }
+  a.sos b { font-size: 3.25rem; font-weight: 800; }
+  a:focus-visible { outline: 3px solid #0a3fa8; outline-offset: 3px; }
+  a.sos:focus-visible { outline-color: #fff; outline-offset: -8px; }
+  [lang]:not(:first-of-type) { border-top: 1px solid #c9d2df; padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <section lang="pl">
+    <h1>Brak połączenia</h1>
+    <p>Ta strona nie jest zapisana na telefonie. Otwórz aplikację ponownie, gdy wróci sieć. W nagłym wypadku zadzwoń pod 112.</p>
+  </section>
+  <section lang="en">
+    <h1>No connection</h1>
+    <p>This page is not saved on your phone. Open the app again when the network is back. In an emergency, call 112.</p>
+  </section>
+  <section lang="uk">
+    <h1>Немає з’єднання</h1>
+    <p>Цієї сторінки немає на телефоні. Відкрийте застосунок знову, коли з’явиться мережа. У невідкладній ситуації телефонуйте на 112.</p>
+  </section>
+  <a class="sos" href="tel:112" aria-label="112"><span>112</span><b aria-hidden="true">112</b></a>
+</main>
+</body>
+</html>

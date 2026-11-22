@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Tłumaczenia, kontrast, typy, lint i testy jednostkowe (w tym kontrakt /data/aed.json i mapowanie wykazu zbiorczego).
+      - run: npm run check
+      # Build nie potrzebuje bazy: trasy z danymi są dynamiczne.
+      - run: npm run build
