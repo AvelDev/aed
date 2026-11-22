@@ -124,42 +124,102 @@ def build_aed_table_schema() -> dict:
     return {"fields": fields, "missingValues": []}
 
 
-def publish_aed_resource(result: AEDAggregationResult, csv_path: Path, organization_pk: Optional[int] = None) -> int:
-    """
-    Tworzy nowy zasób (CSV) w zbiorze łączonym i usuwa poprzednie wersje zasobu.
-    Zwraca pk nowego zasobu.
-    """
+XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+AED_TABLE_EXT_IDENT_MAIN = "aed-aggregate-wykaz"  # ext_ident ma najwyżej 36 znaków
+AED_TABLE_EXT_IDENT_UNIT = "aed-aggregate-tabela-%d"
+
+
+def build_aed_table_description(result: AEDAggregationResult, table: dict) -> str:
+    """Opis tabeli wykazu: zbiorczej (wszystkie źródła) albo jednego dysponenta."""
+    if table["kind"] == "main":
+        return build_aed_resource_description(result)
+    sources = [s for s in result.sources if s["dysponent"] == table["dysponent"]]
+    items = "".join(
+        f'<li><a href="{escape(s["zrodlo_url"])}">{escape(s["zbior_tytul"])}</a> '
+        f'({escape(s["licencja"])}, rekordów: {s["wlaczone"]})</li>'
+        for s in sources
+    )
+    return (
+        f"<p>Defibrylatory AED udostępnione w portalu dane.gov.pl przez: {escape(table['dysponent'])}. "
+        f"To jedna z tabel wykazu „{escape(settings.AED_DATASET_TITLE)}”.</p><ul>{items}</ul>"
+        "<p>Zmiany wprowadzone przy łączeniu są opisane w kolumnie „Zmiany wprowadzone przy łączeniu”.</p>"
+    )
+
+
+def _create_aed_resource(dataset, *, title, description, ext_ident, path, content_type, schema=None):
     Resource = apps.get_model("resources", "Resource")
     ResourceFile = apps.get_model("resources", "ResourceFile")
+    params = {}
+    if schema is not None:
+        params["tabular_data_schema"] = schema
+    resource = Resource.objects.create(
+        title=title,
+        description=description,
+        dataset=dataset,
+        ext_ident=ext_ident,
+        has_dynamic_data=False,
+        has_high_value_data=False,
+        has_high_value_data_from_ec_list=False,
+        has_research_data=False,
+        contains_protected_data=False,
+        status="published",
+        data_date=datetime.date.today(),
+        **params,
+    )
+    with open(path, "rb") as f:
+        upload = SimpleUploadedFile(name=os.path.basename(path), content=f.read(), content_type=content_type)
+    # post_save ResourceFile uruchamia standardową walidację i indeksowanie
+    ResourceFile.objects.create(resource=resource, is_main=True, file=upload)
+    return resource
+
+
+def publish_aed_resource(
+    result: AEDAggregationResult,
+    csv_path: Path,
+    organization_pk: Optional[int] = None,
+    tables: Optional[List[dict]] = None,
+) -> int:
+    """
+    Tworzy w zbiorze łączonym tabele wykazu i usuwa poprzednie wersje (jak wykaz DGA: jeden zbiór, w środku kilka tabel).
+    - zasób CSV z pełnym rekordem (w tym dane_zrodlowe) - zwracany pk,
+    - tabele XLSX w układzie wykazu DGA: zbiorcza i po jednej dla każdego dysponenta (parametr tables).
+    """
+    Resource = apps.get_model("resources", "Resource")
 
     dataset = get_or_create_aed_dataset(result.license, organization_pk)
     previous = list(
-        Resource.objects.filter(dataset=dataset, ext_ident=settings.AED_RESOURCE_EXT_IDENT).values_list("pk", flat=True)
+        Resource.objects.filter(dataset=dataset, ext_ident__startswith=settings.AED_RESOURCE_EXT_IDENT).values_list("pk", flat=True)
     )
     with transaction.atomic():
-        resource = Resource.objects.create(
+        resource = _create_aed_resource(
+            dataset,
             title=settings.AED_RESOURCE_DEFAULT_TITLE,
             description=build_aed_resource_description(result),
-            dataset=dataset,
             ext_ident=settings.AED_RESOURCE_EXT_IDENT,
-            has_dynamic_data=False,
-            has_high_value_data=False,
-            has_high_value_data_from_ec_list=False,
-            has_research_data=False,
-            contains_protected_data=False,
-            status="published",
-            data_date=datetime.date.today(),
-            tabular_data_schema=build_aed_table_schema(),
+            path=csv_path,
+            content_type="text/csv",
+            schema=build_aed_table_schema(),
         )
-        with open(csv_path, "rb") as f:
-            upload = SimpleUploadedFile(name=os.path.basename(csv_path), content=f.read(), content_type="text/csv")
-        # post_save ResourceFile uruchamia standardową walidację i indeksowanie
-        ResourceFile.objects.create(resource=resource, is_main=True, file=upload)
+        unit_number = 0
+        for table in tables or []:
+            if table["kind"] == "main":
+                ext_ident = AED_TABLE_EXT_IDENT_MAIN
+            else:
+                unit_number += 1
+                ext_ident = AED_TABLE_EXT_IDENT_UNIT % unit_number
+            _create_aed_resource(
+                dataset,
+                title=table["title"],
+                description=build_aed_table_description(result, table),
+                ext_ident=ext_ident,
+                path=table["path"],
+                content_type=XLSX_CONTENT_TYPE,
+            )
 
     for pk in previous:
         old = Resource.objects.filter(pk=pk).first()
         if old:
             old.delete()
             logger.info("AED: usunięto poprzednią wersję zasobu %s.", pk)
-    logger.info("AED: opublikowano zasób %s w zbiorze %s.", resource.pk, dataset.pk)
+    logger.info("AED: opublikowano zasób %s i tabel: %d w zbiorze %s.", resource.pk, len(tables or []), dataset.pk)
     return resource.pk

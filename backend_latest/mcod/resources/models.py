@@ -577,6 +577,11 @@ class Resource(ExtendedModel):
     automatic_data_date_end = models.DateField(verbose_name=_("Data date end date update"), blank=True, null=True)
     endless_data_date_update = models.BooleanField(verbose_name=_("Endless data date update"), default=False)
     contains_protected_data = models.BooleanField(verbose_name=_("Contains protected data list"), default=False)
+    contains_aed_data = models.BooleanField(
+        verbose_name=_("Contains AED defibrillator data"),
+        help_text=_("Resource in the AED template; it is included in the combined AED list."),
+        default=False,
+    )
 
     def __str__(self):
         return self.title

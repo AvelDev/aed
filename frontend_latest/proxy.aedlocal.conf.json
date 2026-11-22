@@ -1,0 +1,32 @@
+{
+  "/api/**": {
+    "target": "http://localhost:8001/1.4/",
+    "secure": false,
+    "pathRewrite": {
+      "^/api": ""
+    },
+    "logLevel": "debug",
+    "changeOrigin": true
+  },
+  "/media": {
+    "target": "http://localhost:8001",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
+  },
+  "/cms": {
+    "target": "https://cms.dane.gov.pl/",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/cms": ""
+    }
+  },
+  "/flags": {
+    "target": "https://dane.gov.pl/",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
+  }
+}

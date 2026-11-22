@@ -4,7 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from mcod.resources.aed_aggregation import build_aed_rows, write_aed_outputs
+from mcod.resources.aed_aggregation import build_aed_rows, write_aed_outputs, write_aed_tables, write_aed_template
 
 
 class Command(BaseCommand):
@@ -12,6 +12,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--out", default=None, help="Folder wynikowy (domyślnie AED_DATASET_CREATION_ROOT)")
+        parser.add_argument(
+            "--template",
+            action="store_true",
+            help="Zapisz tylko szablon AED dla dostawców (CSV i XLSX) i zakończ",
+        )
         parser.add_argument("--publish", action="store_true", help="Opublikuj wynik jako zasób w portalu")
         parser.add_argument(
             "--owner-pk",
@@ -21,15 +26,20 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        result = build_aed_rows()
         out_dir = Path(options["out"] or settings.AED_DATASET_CREATION_ROOT)
+        if options["template"]:
+            for path in write_aed_template(out_dir).values():
+                self.stdout.write(f"Szablon: {path}")
+            return
+        result = build_aed_rows()
         paths = write_aed_outputs(result, out_dir)
+        tables = write_aed_tables(result, out_dir) if result.rows else []
 
         w = self.stdout.write
         w(f"Połączone zbiory: {len(result.sources)}")
         for s in result.sources:
             w(
-                f"  [{s['zbior_id']}] {s['zbior_tytul']} ({s['dysponent']}, {s['licencja']}, {s['format']}): "
+                f"  [{s['zbior_id']}] {s['zbior_tytul']} ({s['dysponent']}, {s['licencja']}, {s['format']}, tryb: {s['tryb']}): "
                 f"odczytane {s['odczytane']}, włączone {s['wlaczone']}, odrzucone {s['odrzucone']}, "
                 f"duplikaty {s['duplikaty']}"
             )
@@ -46,6 +56,9 @@ class Command(BaseCommand):
         w(f"Pliki: {out_dir}")
         for p in paths.values():
             w(f"  {p.name}")
+        w(f"Tabele wykazu (XLSX): {len(tables)}")
+        for t in tables:
+            w(f"  [{t['kind']}] {t['title']}: {t['rows']} wierszy -> {t['path'].name}")
 
         if options["publish"]:
             from mcod.resources.aed_publication import publish_aed_resource
@@ -53,5 +66,5 @@ class Command(BaseCommand):
             if not result.rows:
                 self.stderr.write("Brak rekordów - publikacja pominięta.")
                 return
-            resource_pk = publish_aed_resource(result, paths["csv"], options["owner_pk"])
+            resource_pk = publish_aed_resource(result, paths["csv"], options["owner_pk"], tables)
             w(self.style.SUCCESS(f"Opublikowano zasób {resource_pk}."))

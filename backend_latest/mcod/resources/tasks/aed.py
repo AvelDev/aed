@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from django.conf import settings
 
 from mcod.core.tasks import extended_shared_task
-from mcod.resources.aed_aggregation import build_aed_rows, write_aed_outputs
+from mcod.resources.aed_aggregation import build_aed_rows, write_aed_outputs, write_aed_tables
 from mcod.resources.aed_publication import AEDPublicationNotConfigured, publish_aed_resource
 
 logger = logging.getLogger("mcod")
@@ -31,6 +31,7 @@ def create_aed_dataset_task(organization_pk: Optional[int] = None) -> Dict[str, 
     logger.info("Step 2/3: Writing AED output files.")
     out_dir = Path(settings.AED_DATASET_CREATION_ROOT) / datetime.now().strftime("%Y%m%d")
     paths = write_aed_outputs(result, out_dir)
+    tables = write_aed_tables(result, out_dir) if result.rows else []
 
     summary: Dict[str, Any] = {
         "sources": len(result.sources),
@@ -39,6 +40,7 @@ def create_aed_dataset_task(organization_pk: Optional[int] = None) -> Dict[str, 
         "rejected": len(result.rejected),
         "duplicates": len(result.duplicates),
         "license": result.license,
+        "tables": len(tables),
         "resource_pk": None,
     }
     if not result.rows:
@@ -47,7 +49,7 @@ def create_aed_dataset_task(organization_pk: Optional[int] = None) -> Dict[str, 
 
     logger.info("Step 3/3: Publishing AED resource.")
     try:
-        summary["resource_pk"] = publish_aed_resource(result, paths["csv"], organization_pk)
+        summary["resource_pk"] = publish_aed_resource(result, paths["csv"], organization_pk, tables)
     except AEDPublicationNotConfigured as exc:
         logger.warning("AED: publikacja pominięta - %s", exc)
     return summary

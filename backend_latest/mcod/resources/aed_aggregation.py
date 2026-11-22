@@ -44,19 +44,29 @@ logger = logging.getLogger("mcod")
 # --------------------------------------------------------------------------- #
 
 # Prefiltr w bazie (icontains) - szeroki, dokładne dopasowanie robi regex.
-AED_DB_PREFILTER_TERMS: Tuple[str, ...] = ("defibryl", "aed")
+# "defibr" obejmuje też warianty pisowni (defibryzator, defibrilator, defibrillator), które rozpoznaje AED_STRONG_PATTERN.
+AED_DB_PREFILTER_TERMS: Tuple[str, ...] = ("defibr", "aed")
 
 # `defibryl` w dowolnym miejscu albo samodzielne słowo `AED`.
 # `\w` w Pythonie 3 jest unicodowe, więc granice słów działają z polskimi literami
 # (np. "AEDą" albo "ZAEDx" nie pasują, "AED-y" i "(AED)" pasują).
-AED_TEXT_PATTERN = re.compile(r"defibryl|(?<!\w)aed(?!\w)", re.IGNORECASE)
+AED_TEXT_PATTERN = re.compile(r"defibr[iy][lz]|defibrill|(?<!\w)aed(?!\w)", re.IGNORECASE)
+
+# Samo "AED" w tytule bywa skrótem czegoś innego ("Nowe technologie AED", "Alternatywne Energie Dystrybuowane (AED)").
+# Bez słowa "defibrylator" uznajemy je za wykaz AED tylko wtedy, gdy w tytułach albo opisie jest kontekst ratowniczy.
+# Tekst porównywany bez polskich znaków i wielkich liter.
+# Warianty pisowni spotykane w danych (np. "defibryzatorów" w zbiorze Warszawy) oraz angielskie "defibrillator".
+AED_STRONG_PATTERN = re.compile(r"defibr[iy][lz]|defibrill", re.IGNORECASE)
+AED_CONTEXT_PATTERN = re.compile(r"ratown|reanim|pierwsz\w* pomoc|zatrzymani\w* krazeni|kardio|(?<!\w)serc", re.IGNORECASE)
 
 # Kolejność preferowanych formatów zasobu.
-AED_RESOURCE_FORMAT_PRIORITY: Tuple[str, ...] = ("geojson", "json", "csv")
+AED_RESOURCE_FORMAT_PRIORITY: Tuple[str, ...] = ("geojson", "json", "csv", "xlsx")
 
 AED_REQUEST_TIMEOUT = 60  # sekundy
 
 AED_TEXT_ENCODINGS: Tuple[str, ...] = ("utf-8-sig", "cp1250")
+# Pełna sygnatura archiwum ZIP (XLSX). Samo "PK" nie wystarcza: tak może zaczynać się nagłówek CSV (np. "PKD;...").
+XLSX_ZIP_SIGNATURE = b"PK\x03\x04"
 AED_CSV_DELIMITERS: Tuple[str, ...] = (";", ",", "\t")
 AED_JSON_MAX_DEPTH = 4
 
@@ -71,11 +81,11 @@ AED_COORD_MIN_IN_RANGE_SHARE = 0.9
 # Punkty odległe od mediany zbioru (typowo: współrzędne skopiowane z innego miasta).
 AED_OUTLIER_CHECK_ENABLED = True
 AED_OUTLIER_DISTANCE_KM = 25.0
-AED_OUTLIER_MIN_POINTS = 5
+AED_OUTLIER_MIN_POINTS = 4  # te same progi co w potoku Node (przetwarzanie/ujednolic.mjs)
 # Sprawdzanie wykonujemy tylko dla zbiorów "lokalnych": jeśli mniej niż tyle
 # punktów leży w promieniu progu od mediany, zbiór obejmuje większy obszar
 # (np. województwo) i nie oznaczamy niczego jako odległego.
-AED_OUTLIER_MIN_LOCAL_SHARE = 0.8
+AED_OUTLIER_MIN_LOCAL_SHARE = 0.75
 
 AED_DUPLICATE_COORD_PRECISION = 5
 EARTH_RADIUS_KM = 6371.0088
@@ -134,6 +144,52 @@ AED_ROLES_SKIP_CONSTANT: Tuple[str, ...] = ("nazwa", "opis")
 AED_ROLES_JOIN_MULTIPLE: Tuple[str, ...] = ("opis", "godziny", "dostep", "kontakt")
 AED_JOIN_SEPARATOR = "; "
 
+# Szablon AED (jak szablon wykazu DGA): dostawca publikuje zasób w tym układzie kolumn, a zbiorczy wykaz go
+# po prostu scala, bez zgadywania. Nazwy i opisy są zgodne ze wzorcowym zakresem danych (przetwarzanie/lib/schemat.mjs).
+# (nazwa kolumny, czy wymagana, opis, przykład)
+AED_TEMPLATE_FIELDS: Tuple[Tuple[str, bool, str, str], ...] = (
+    ("id_zrodlowy", False, "Identyfikator urządzenia nadany przez dysponenta.", "AED-001"),
+    ("szerokosc", True, "Szerokość geograficzna, WGS84, stopnie dziesiętne (kropka).", "52.2086"),
+    ("dlugosc", True, "Długość geograficzna, WGS84, stopnie dziesiętne (kropka).", "21.0148"),
+    ("nazwa_obiektu", False, "Nazwa obiektu, w którym znajduje się urządzenie.", "Urząd Dzielnicy Mokotów"),
+    ("opis_miejsca", False, "Gdzie dokładnie wisi urządzenie: piętro, korytarz, recepcja.", "Przy wejściu na półpiętrze"),
+    ("adres", False, "Adres: ulica i numer, kod pocztowy, miejscowość.", "Rakowiecka 25/27, 02-517 Warszawa"),
+    ("miejscowosc", False, "Miejscowość.", "Warszawa"),
+    ("kod_teryt", False, "Kod gminy (TERC/TERYT).", "140801"),
+    ("dostep", False, "Kto może skorzystać z urządzenia: publiczny, ograniczony, prywatny.", "publiczny"),
+    ("godziny_dostepnosci", False, "Godziny dostępności w zapisie opening_hours; 24/7 gdy całą dobę.", "Mo-Fr 08:00-18:00"),
+    ("godziny_tekst_zrodlowy", False, "Godziny dokładnie tak, jak podał autor (gdy nie da się ich zapisać w opening_hours).", "W godzinach otwarcia stacji metra"),
+    ("w_budynku", False, "Czy urządzenie jest wewnątrz budynku: tak, nie.", "tak"),
+    ("pietro", False, "Kondygnacja: 0 = parter, liczby ujemne = poniżej parteru.", "0"),
+    ("producent", False, "Producent urządzenia.", "Philips"),
+    ("model", False, "Model urządzenia.", "HeartStart HS1"),
+    ("waznosc_elektrod", False, "Data ważności elektrod, RRRR-MM-DD.", "2027-05-31"),
+    ("data_przegladu", False, "Data ostatniego przeglądu, RRRR-MM-DD.", "2026-03-10"),
+    ("data_nastepnego_przegladu", False, "Termin kolejnego przeglądu, RRRR-MM-DD.", "2027-03-10"),
+    ("stan", False, "Czy urządzenie jest gotowe do użycia: sprawny, w_serwisie, wycofany.", "sprawny"),
+    ("kontakt", False, "Kontakt do opiekuna urządzenia (służbowy e-mail lub telefon).", "sekretariat@example.pl"),
+)
+AED_TEMPLATE_COLUMNS: Tuple[str, ...] = tuple(f[0] for f in AED_TEMPLATE_FIELDS)
+AED_TEMPLATE_REQUIRED_COLUMNS: Tuple[str, ...] = tuple(f[0] for f in AED_TEMPLATE_FIELDS if f[1])
+# Rola we wspólnym schemacie -> kolumny szablonu (reszta kolumn szablonu zostaje w dane_zrodlowe).
+AED_TEMPLATE_ROLES: Dict[str, Tuple[str, ...]] = {
+    "id_zrodlowe": ("id_zrodlowy",),
+    "szerokosc": ("szerokosc",),
+    "dlugosc": ("dlugosc",),
+    "nazwa": ("nazwa_obiektu",),
+    "adres": ("adres",),
+    "miejscowosc": ("miejscowosc",),
+    "opis": ("opis_miejsca",),
+    "godziny": ("godziny_dostepnosci",),
+    "godziny_tekst": ("godziny_tekst_zrodlowy",),  # używane, gdy godziny_dostepnosci są puste
+    "dostep": ("dostep",),
+    "kontakt": ("kontakt",),
+    "producent": ("producent",),
+}
+# Jak zasób trafił do wykazu.
+AED_MODE_TEMPLATE = "szablon"
+AED_MODE_TEXT = "wyszukiwanie_tekstowe"
+
 # Licencje.
 AED_LICENSE_CC0 = "CC0 1.0"
 AED_LICENSE_CC_BY = "CC BY 4.0"
@@ -175,6 +231,36 @@ AED_OUTPUT_FILES = {
     "duplicates": "duplikaty.json",
 }
 
+# Tabele w układzie wykazu DGA (zbiór 3930 "Wykaz DGA", zbiorczy wykaz DGA 4354): w jednym zbiorze kilka tabel,
+# główna zbiorcza oraz po jednej dla każdego dysponenta, wszystkie XLSX, kolumna "Lp." na początku,
+# "Nazwa dysponenta zasobu" w tabeli zbiorczej i "Warunki ponownego wykorzystywania" na końcu.
+AED_TABLE_LP_COLUMN = "Lp."
+AED_TABLE_DISPOSER_COLUMN = "Nazwa dysponenta zasobu"
+AED_TABLE_TERMS_COLUMN = "Warunki ponownego wykorzystywania"
+AED_MAIN_SHEET_NAME = "Arkusz 1"  # jak MAIN_DGA_XLSX_WORKSHEET_NAME
+AED_UNIT_SHEET_NAME = "AED - wykaz defibrylatorów"  # jak "DGA - wykaz chronionych danych" w tabelach jednostek
+AED_UNIT_TITLE_PREFIX = "Wykaz defibrylatorów AED"  # jak "Wykaz zasobów chronionych danych <jednostka>"
+AED_MAIN_FILE_NAME = "aed_wykaz_zbiorczy.xlsx"
+# (klucz wiersza, nagłówek kolumny, szerokość w arkuszu)
+AED_TABLE_CONTENT_COLUMNS: Tuple[Tuple[str, str, int], ...] = (
+    ("nazwa", "Nazwa obiektu", 38),
+    ("adres", "Adres", 38),
+    ("miejscowosc", "Miejscowość", 20),
+    ("opis", "Opis miejsca", 40),
+    ("godziny", "Godziny dostępności", 28),
+    ("dostep", "Dostęp", 14),
+    ("producent", "Producent", 18),
+    ("kontakt", "Kontakt", 26),
+    ("szerokosc", "Szerokość geograficzna", 16),
+    ("dlugosc", "Długość geograficzna", 16),
+    ("id_zrodlowe", "Identyfikator u dysponenta", 18),
+    ("korekty", "Zmiany wprowadzone przy łączeniu", 30),
+)
+AED_TABLE_SOURCE_COLUMNS: Tuple[Tuple[str, str, int], ...] = (
+    ("zrodlo_zbior_tytul", "Zbiór źródłowy", 40),
+    ("zrodlo_url", "Adres zbioru źródłowego", 44),
+)
+
 # Rekord po parsowaniu: (właściwości, punkt z geometrii jako (lon, lat) albo None).
 ParsedRecord = Tuple[Dict[str, Any], Optional[Tuple[Any, Any]]]
 
@@ -190,6 +276,10 @@ class AEDSourceMeta:
     url: str
     publisher: str
     license: str
+
+
+class AEDTemplateError(AEDSourceReadError):
+    """Zasób oznaczony jako AED nie spełnia szablonu (brak wymaganych kolumn)."""
 
 
 @dataclass
@@ -397,7 +487,38 @@ def parse_json_data(data: Any) -> List[ParsedRecord]:
     return _objects_to_records(items) if items else []
 
 
+def parse_xlsx(raw: bytes) -> List[ParsedRecord]:
+    """Pierwszy arkusz XLSX: pierwszy niepusty wiersz to nagłówek, kolejne wiersze to rekordy (jak w tabelach DGA)."""
+    try:
+        from openpyxl import load_workbook
+
+        workbook = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    except Exception as exc:
+        raise AEDSourceReadError(f"nie można odczytać pliku XLSX: {exc.__class__.__name__}") from exc
+    try:
+        header: Optional[List[str]] = None
+        records: List[ParsedRecord] = []
+        for cells in workbook.worksheets[0].iter_rows(values_only=True):
+            values = [clean_value(cell) for cell in cells]
+            if not any(values):
+                continue
+            if header is None:
+                header = _unique_headers(values)
+                continue
+            if len(values) > len(header):  # wartości poza nagłówkiem nie mogą zniknąć
+                header = header + [f"kolumna_{i + 1}" for i in range(len(header), len(values))]
+            records.append(({name: value for name, value in zip(header, values)}, None))
+        return records
+    finally:
+        workbook.close()
+
+
 def parse_content(raw: bytes, fmt: Optional[str] = None) -> List[ParsedRecord]:
+    # O XLSX decyduje zawartość, nie deklarowany format: plik opisany jako XLSX bywa w rzeczywistości CSV.
+    if raw[:4] == XLSX_ZIP_SIGNATURE:
+        return parse_xlsx(raw)
+    if (fmt or "").lower() == "xlsx":
+        fmt = None
     text = decode_bytes(raw).lstrip("﻿")
     fmt = (fmt or "").lower()
     stripped = text.lstrip()
@@ -608,6 +729,54 @@ def combined_license(kinds: Iterable[str]) -> Optional[str]:
 # --------------------------------------------------------------------------- #
 
 
+def template_roles(records: Sequence[ParsedRecord]) -> Dict[str, List[str]]:
+    """
+    Mapa rola -> kolumny dla zasobu w szablonie AED (dokładne nazwy, bez zgadywania).
+    Brak kolumny wymaganej (szerokosc, dlugosc) odrzuca cały zasób, chyba że każdy rekord ma punkt w geometrii
+    (GeoJSON). Pozostałe kolumny są opcjonalne, a nadmiarowe zostają w dane_zrodlowe.
+    """
+    lookup: Dict[str, str] = {}
+    for column in _ordered_columns(records):
+        lookup.setdefault(normalize_column_name(column), column)
+    has_geometry = bool(records) and all(geom is not None for _, geom in records)
+    missing = [c for c in AED_TEMPLATE_REQUIRED_COLUMNS if c not in lookup]
+    if missing and not (has_geometry and set(missing) <= {"szerokosc", "dlugosc"}):
+        raise AEDTemplateError("zasób nie jest zgodny z szablonem AED, brak wymaganych kolumn: " + ", ".join(missing))
+    roles: Dict[str, List[str]] = {}
+    for role, names in AED_TEMPLATE_ROLES.items():
+        columns = [lookup[n] for n in names if n in lookup]
+        if columns:
+            roles[role] = columns
+    return roles
+
+
+def write_aed_template(out_dir: Path) -> Dict[str, Path]:
+    """Zapisuje szablon dla dostawców: CSV (nagłówek i wiersz przykładowy) oraz XLSX z opisem pól."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths = {"csv": out_dir / "szablon_aed.csv"}
+    with open(paths["csv"], "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(AED_TEMPLATE_COLUMNS)
+        writer.writerow([field[3] for field in AED_TEMPLATE_FIELDS])
+    try:
+        from openpyxl import Workbook
+    except ImportError:  # CSV wystarczy, XLSX jest dodatkiem
+        return paths
+    workbook = Workbook()
+    data_sheet = workbook.active
+    data_sheet.title = "Dane"
+    data_sheet.append(list(AED_TEMPLATE_COLUMNS))
+    data_sheet.append([field[3] for field in AED_TEMPLATE_FIELDS])
+    description_sheet = workbook.create_sheet("Opis pól")
+    description_sheet.append(["Kolumna", "Wymagana", "Opis", "Przykład"])
+    for name, required, description, example in AED_TEMPLATE_FIELDS:
+        description_sheet.append([name, "tak" if required else "nie", description, example])
+    paths["xlsx"] = out_dir / "szablon_aed.xlsx"
+    workbook.save(paths["xlsx"])
+    return paths
+
+
 def _role_value(props: Dict[str, Any], roles: Dict[str, List[str]], role: str) -> str:
     columns = roles.get(role) or []
     values = [clean_value(props.get(c)) for c in columns]
@@ -628,10 +797,14 @@ def _address(props: Dict[str, Any], roles: Dict[str, List[str]]) -> str:
 
 
 def records_to_rows(
-    records: Sequence[ParsedRecord], source: AEDSourceMeta
+    records: Sequence[ParsedRecord], source: AEDSourceMeta, roles: Optional[Dict[str, List[str]]] = None
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    """Mapuje rekordy jednego źródła na wspólny schemat. Zwraca (wiersze, odrzucone)."""
-    roles = map_columns(records)
+    """
+    Mapuje rekordy jednego źródła na wspólny schemat. Zwraca (wiersze, odrzucone).
+    Bez `roles` kolumny są rozpoznawane po nazwach i wartościach; zasób w szablonie AED podaje je wprost.
+    """
+    if roles is None:
+        roles = map_columns(records)
     geometry_column = None
     if not roles.get("szerokosc") and not any(geom for _, geom in records):
         geometry_column = detect_geometry_column(records, _ordered_columns(records))
@@ -675,7 +848,7 @@ def records_to_rows(
                 "adres": _address(props, roles),
                 "miejscowosc": _role_value(props, roles, "miejscowosc"),
                 "opis": _role_value(props, roles, "opis"),
-                "godziny": _role_value(props, roles, "godziny"),
+                "godziny": _role_value(props, roles, "godziny") or _role_value(props, roles, "godziny_tekst"),
                 "dostep": _role_value(props, roles, "dostep"),
                 "kontakt": _role_value(props, roles, "kontakt"),
                 "producent": _role_value(props, roles, "producent"),
@@ -710,7 +883,7 @@ def deduplicate_rows(rows: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], 
     """
     Usuwa ten sam punkt występujący w RÓŻNYCH zbiorach: współrzędne zaokrąglone
     do AED_DUPLICATE_COORD_PRECISION miejsc identyczne ORAZ równa znormalizowana
-    nazwa lub adres. Zostaje wpis z pierwszego zbioru (kolejność wierszy).
+    nazwa lub adres. Zostaje wpis z wcześniejszego źródła (kolejność ustala build_aed_rows: flaga, potem starszy zbiór).
     Duplikaty w obrębie jednego zbioru są zachowywane.
     """
     kept: List[Dict[str, Any]] = []
@@ -734,6 +907,7 @@ def deduplicate_rows(rows: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], 
                 {
                     "id": row["id"],
                     "zrodlo_zbior_id": row["zrodlo_zbior_id"],
+                    "zasob_id": row.get("_zasob_id"),
                     "zrodlo_zbior_tytul": row["zrodlo_zbior_tytul"],
                     "duplikat_rekordu": original["id"],
                     "nazwa": row.get("nazwa"),
@@ -793,6 +967,122 @@ def write_aed_outputs(result: AEDAggregationResult, out_dir: Path) -> Dict[str, 
     return paths
 
 
+def group_rows_by_disposer(rows: Sequence[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Wiersze pogrupowane według dysponenta, dysponenci alfabetycznie (jak w wykazie DGA), kolejność w grupie bez zmian."""
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for row in sorted(rows, key=lambda r: normalize_text_for_comparison(r.get("dysponent") or "")):
+        grouped.setdefault(row.get("dysponent") or "", []).append(row)
+    return grouped
+
+
+def _table_cell(row: Dict[str, Any], key: str) -> Any:
+    value = row.get(key)
+    if key == "korekty":
+        return "; ".join(value or []) or None
+    if key in ("szerokosc", "dlugosc"):
+        return float(value)
+    return value if value not in (None, "") else None
+
+
+def _terms_cell(row: Dict[str, Any]) -> str:
+    return f"Licencja {row['licencja']}" if row.get("licencja") else "określone w zbiorze źródłowym"
+
+
+def _xlsx_safe(value: Any) -> Any:
+    """Usuwa znaki sterujące, których format XLSX nie dopuszcza (openpyxl zgłasza wtedy błąd i cały zapis się wywraca)."""
+    if isinstance(value, str):
+        from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+
+        return ILLEGAL_CHARACTERS_RE.sub("", value)
+    return value
+
+
+def _write_xlsx_table(path: Path, sheet_name: str, headers: List[str], widths: List[int], body: List[List[Any]]) -> None:
+    """Zapis i wygląd jak w wykazie DGA (add_style_to_main_dga_excel_file): zamrożony nagłówek, bez ramek, do lewej."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = sheet_name
+    sheet.append(headers)
+    for line in body:
+        sheet.append([_xlsx_safe(value) for value in line])
+    sheet.freeze_panes = "A2"
+    no_border = Border(left=Side(style=None), right=Side(style=None), top=Side(style=None), bottom=Side(style=None))
+    for sheet_row in sheet.iter_rows():
+        for cell in sheet_row:
+            # Tekst ze źródła zaczynający się od "=" openpyxl zapisałby jako formułę: wymuszamy zwykły tekst.
+            if cell.data_type == "f":
+                cell.data_type = "s"
+            cell.border = no_border
+            cell.alignment = Alignment(horizontal="left")
+    for index, width in enumerate(widths, start=1):
+        sheet.column_dimensions[get_column_letter(index)].width = width
+    workbook.save(path)
+
+
+def write_aed_tables(result: AEDAggregationResult, out_dir: Path) -> List[Dict[str, Any]]:
+    """
+    Tabele wykazu w układzie wykazu DGA: jedna zbiorcza (wszyscy dysponenci) i po jednej tabeli dla każdego dysponenta.
+    Zwraca opisy tabel: kind ("main" albo "unit"), title, path, dysponent, rows.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    grouped = group_rows_by_disposer(result.rows)
+    content_headers = [c[1] for c in AED_TABLE_CONTENT_COLUMNS]
+    content_widths = [c[2] for c in AED_TABLE_CONTENT_COLUMNS]
+    tables: List[Dict[str, Any]] = []
+
+    # Tabela zbiorcza
+    headers = [AED_TABLE_LP_COLUMN, AED_TABLE_DISPOSER_COLUMN] + content_headers + [c[1] for c in AED_TABLE_SOURCE_COLUMNS]
+    headers.append(AED_TABLE_TERMS_COLUMN)
+    widths = [6, 34] + content_widths + [c[2] for c in AED_TABLE_SOURCE_COLUMNS] + [26]
+    body: List[List[Any]] = []
+    for disposer, rows in grouped.items():
+        for row in rows:
+            line: List[Any] = [f"{len(body) + 1}.", disposer]
+            line += [_table_cell(row, c[0]) for c in AED_TABLE_CONTENT_COLUMNS]
+            line += [_table_cell(row, c[0]) for c in AED_TABLE_SOURCE_COLUMNS]
+            line.append(_terms_cell(row))
+            body.append(line)
+    main_path = out_dir / AED_MAIN_FILE_NAME
+    _write_xlsx_table(main_path, AED_MAIN_SHEET_NAME, headers, widths, body)
+    tables.append(
+        {
+            "kind": "main",
+            "title": f"{settings.AED_RESOURCE_DEFAULT_TITLE} (XLSX)",
+            "path": main_path,
+            "dysponent": None,
+            "rows": len(body),
+        }
+    )
+
+    # Tabela każdego dysponenta
+    headers = [AED_TABLE_LP_COLUMN] + content_headers + [AED_TABLE_TERMS_COLUMN]
+    widths = [6] + content_widths + [26]
+    used_names = {AED_MAIN_FILE_NAME}
+    for disposer, rows in grouped.items():
+        body = [
+            [f"{number}."] + [_table_cell(row, c[0]) for c in AED_TABLE_CONTENT_COLUMNS] + [_terms_cell(row)]
+            for number, row in enumerate(rows, start=1)
+        ]
+        slug = normalize_column_name(disposer)[:60] or "dysponent"
+        name = f"aed_wykaz_{slug}.xlsx"
+        suffix = 2
+        while name in used_names:
+            name = f"aed_wykaz_{slug}_{suffix}.xlsx"
+            suffix += 1
+        used_names.add(name)
+        path = out_dir / name
+        _write_xlsx_table(path, AED_UNIT_SHEET_NAME, headers, widths, body)
+        tables.append(
+            {"kind": "unit", "title": f"{AED_UNIT_TITLE_PREFIX} {disposer}", "path": path, "dysponent": disposer, "rows": len(body)}
+        )
+    return tables
+
+
 def _dump_json(path: Path, data: Any) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2, default=str)
@@ -804,8 +1094,23 @@ def _dump_json(path: Path, data: Any) -> None:
 
 
 def dataset_matches_aed(dataset: "Dataset") -> bool:
-    tags = " ".join(dataset.tags.values_list("name", flat=True))
-    return matches_aed_text(dataset.title, strip_tags(dataset.notes or ""), tags)
+    """
+    Tytuł zbioru albo tytuł jego opublikowanego zasobu zawiera "defibrylator" lub samodzielne "AED".
+    Sam opis albo tagi nie wystarczą: wzmianka o defibrylatorach w opisie zbioru o aptekach nie robi z niego wykazu AED.
+    To tryb przejściowy, docelowo zasoby wskazują sami dostawcy flagą contains_aed_data.
+    """
+    Resource = apps.get_model("resources", "Resource")
+    resource_titles = list(
+        Resource.objects.filter(dataset=dataset, status="published", is_removed=False).values_list("title", flat=True)
+    )
+    titles = [dataset.title or "", *resource_titles]
+    if any(AED_STRONG_PATTERN.search(title) for title in titles):
+        return True
+    if not any(matches_aed_text(title) for title in titles):
+        return False
+    # Samo "AED": potrzebny kontekst ratowniczy w tytułach lub opisie zbioru.
+    context = strip_diacritics(" ".join([*titles, strip_tags(dataset.notes or "")]).replace("ł", "l")).lower()
+    return bool(AED_CONTEXT_PATTERN.search(context))
 
 
 def find_aed_datasets() -> List["Dataset"]:
@@ -813,7 +1118,7 @@ def find_aed_datasets() -> List["Dataset"]:
     Dataset = apps.get_model("datasets", "Dataset")
     prefilter = Q()
     for term in AED_DB_PREFILTER_TERMS:
-        prefilter |= Q(title__icontains=term) | Q(notes__icontains=term) | Q(tags__name__icontains=term)
+        prefilter |= Q(title__icontains=term) | Q(resources__title__icontains=term)
     qs: QuerySet = (
         Dataset.objects.filter(status="published", is_removed=False)
         .filter(prefilter)
@@ -825,6 +1130,77 @@ def find_aed_datasets() -> List["Dataset"]:
     if own_pks:
         qs = qs.exclude(pk__in=own_pks)
     return [d for d in qs if dataset_matches_aed(d)]
+
+
+def get_flagged_aed_resources() -> List["Resource"]:
+    """
+    Zasoby oznaczone flagą contains_aed_data (tak jak DGA oznacza zasoby flagą contains_protected_data):
+    opublikowane, nieusunięte, z poprawną walidacją portalu. Wynik łączenia nie jest własnym źródłem.
+    """
+    Resource = apps.get_model("resources", "Resource")
+    qs: QuerySet = Resource.objects.filter(
+        contains_aed_data=True,
+        status="published",
+        is_removed=False,
+        dataset__status="published",
+        dataset__is_removed=False,
+    )
+    if getattr(settings, "AED_REQUIRE_VALIDATION_SUCCESS", True):
+        qs = qs.filter(data_tasks_last_status="SUCCESS", file_tasks_last_status="SUCCESS", link_tasks_last_status="SUCCESS")
+    qs = qs.select_related("dataset__organization").order_by("dataset__organization__title", "dataset__title", "pk")
+    own_pks = get_aed_output_dataset_pks()
+    if own_pks:
+        qs = qs.exclude(dataset_id__in=own_pks)
+    return list(qs)
+
+
+def describe_not_ready_flagged_resources(eligible_pks: Sequence[int]) -> List[Dict[str, Any]]:
+    """
+    Zasoby oznaczone flagą, które nie trafiły do wykazu (nieopublikowane albo bez poprawnej walidacji portalu).
+    Ich zbiory nie są też szukane po tytule, więc bez tej informacji zniknęłyby z wykazu bez śladu.
+    """
+    Resource = apps.get_model("resources", "Resource")
+    own_pks = set(get_aed_output_dataset_pks())
+    entries = []
+    qs = (
+        Resource.objects.filter(contains_aed_data=True, is_removed=False, dataset__is_removed=False)
+        .exclude(pk__in=list(eligible_pks))
+        .select_related("dataset")
+        .order_by("dataset_id", "pk")
+    )
+    for resource in qs:
+        if resource.dataset_id in own_pks:
+            continue
+        problems = []
+        if resource.status != "published":
+            problems.append(f"zasób ma status {resource.status}")
+        if resource.dataset.status != "published":
+            problems.append(f"zbiór ma status {resource.dataset.status}")
+        statuses = {
+            "danych": resource.data_tasks_last_status,
+            "pliku": resource.file_tasks_last_status,
+            "linku": resource.link_tasks_last_status,
+        }
+        not_ok = [f"{name}: {value or 'brak'}" for name, value in statuses.items() if value != "SUCCESS"]
+        if not_ok and getattr(settings, "AED_REQUIRE_VALIDATION_SUCCESS", True):
+            problems.append("walidacja portalu niezakończona sukcesem (" + ", ".join(not_ok) + ")")
+        entries.append(
+            {
+                "zbior_id": resource.dataset_id,
+                "zbior_tytul": resource.dataset.title,
+                "zasob_id": resource.pk,
+                "powod": "zasób oznaczony jako AED nie jest gotowy: " + ("; ".join(problems) or "nieznany powód"),
+            }
+        )
+    return entries
+
+
+def get_datasets_with_aed_flag_pks() -> List[int]:
+    """Zbiory, w których dostawca oznaczył jakikolwiek zasób jako AED. Wyszukiwanie tekstowe ich nie dotyczy."""
+    Resource = apps.get_model("resources", "Resource")
+    return list(
+        Resource.objects.filter(contains_aed_data=True, is_removed=False).values_list("dataset_id", flat=True).distinct()
+    )
 
 
 def get_aed_output_dataset_pks() -> List[int]:
@@ -852,13 +1228,19 @@ def _has_main_file(resource: "Resource") -> bool:
 
 
 def select_aed_resource(dataset: "Dataset") -> Optional["Resource"]:
-    """Najpierw zasób, którego tytuł pasuje do wzorca, potem format geojson > json > csv."""
+    """
+    Najpierw zasób, którego tytuł pasuje do wzorca, potem format geojson > json > csv > xlsx.
+    Gdy sam tytuł zbioru nie mówi o AED (np. zbiór "Zdrowie" z zasobami o aptekach i defibrylatorach),
+    bierzemy tylko zasoby, których tytuł mówi o AED: inny zasób tego zbioru nie jest wykazem defibrylatorów.
+    """
     Resource = apps.get_model("resources", "Resource")
     candidates = [
         r
         for r in Resource.objects.filter(dataset=dataset, status="published", is_removed=False).order_by("position", "pk")
         if _resource_format(r) in AED_RESOURCE_FORMAT_PRIORITY or (r.link and not _has_main_file(r))
     ]
+    if not matches_aed_text(dataset.title or ""):
+        candidates = [r for r in candidates if matches_aed_text(r.title or "")]
     if not candidates:
         return None
 
@@ -890,13 +1272,16 @@ def fetch_authenticated_source(resource: "Resource") -> Optional[bytes]:
         if not token:
             logger.info("AED: zasób %s wymaga klucza API (zmienna %s nie jest ustawiona).", resource.pk, token_env)
             return None
-        response = requests.request(
-            source.get("method", "GET"),
-            source["api_url"],
-            headers={source.get("auth_header", "Authorization"): token},
-            timeout=AED_REQUEST_TIMEOUT,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.request(
+                source.get("method", "GET"),
+                source["api_url"],
+                headers={source.get("auth_header", "Authorization"): token},
+                timeout=AED_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:  # bez treści odpowiedzi i nagłówków: nie ujawniamy klucza
+            raise AEDSourceReadError(f"API z kluczem nie odpowiedziało poprawnie: {exc.__class__.__name__}") from exc
         return response.content
     return None
 
@@ -950,10 +1335,24 @@ def build_aed_rows() -> AEDAggregationResult:
     """
     result = AEDAggregationResult()
     all_rows: List[Dict[str, Any]] = []
-    included_license_kinds: List[str] = []
+    license_kind_by_dataset: Dict[int, str] = {}
 
-    for dataset in find_aed_datasets():
+    # 1. Zasoby oznaczone przez dostawców flagą contains_aed_data (szablon AED). 2. Zbiory bez takiej flagi:
+    # tryb przejściowy, wykrywanie po słowach (wyłączany AED_LEGACY_TEXT_DISCOVERY = False).
+    flagged = get_flagged_aed_resources()
+    flagged_per_dataset = Counter(r.dataset_id for r in flagged)
+    result.skipped.extend(describe_not_ready_flagged_resources([r.pk for r in flagged]))
+    work: List[Tuple["Dataset", Optional["Resource"], str]] = [(r.dataset, r, AED_MODE_TEMPLATE) for r in flagged]
+    if getattr(settings, "AED_LEGACY_TEXT_DISCOVERY", True):
+        with_flag = set(get_datasets_with_aed_flag_pks())
+        work += [(d, None, AED_MODE_TEXT) for d in find_aed_datasets() if d.pk not in with_flag]
+    # Przy duplikatach zostaje wpis z wcześniejszego źródła: oznaczone flagą, potem starszy zbiór (oryginał), nie alfabet.
+    work.sort(key=lambda item: (item[2] != AED_MODE_TEMPLATE, item[0].pk, item[1].pk if item[1] else 0))
+
+    for dataset, resource, mode in work:
         base = {"zbior_id": dataset.pk, "zbior_tytul": dataset.title}
+        if mode == AED_MODE_TEMPLATE:
+            base["zasob_id"] = resource.pk
         try:
             meta = _source_meta(dataset)
             kind, reason = classify_license(meta.license)
@@ -961,16 +1360,32 @@ def build_aed_rows() -> AEDAggregationResult:
                 result.skipped.append({**base, "licencja": meta.license, "powod": reason})
                 continue
 
-            resource = select_aed_resource(dataset)
             if resource is None:
-                result.skipped.append({**base, "powod": "brak odczytywalnego zasobu (geojson, json, csv)"})
+                resource = select_aed_resource(dataset)
+            if resource is None:
+                result.skipped.append({**base, "powod": "brak odczytywalnego zasobu (geojson, json, csv, xlsx)"})
                 continue
 
             raw, fmt = read_resource_content(resource)
             records = parse_content(raw, fmt)
             if not records:
                 raise AEDSourceReadError("zasób nie zawiera rekordów")
-            rows, rejected = records_to_rows(records, meta)
+            roles = template_roles(records) if mode == AED_MODE_TEMPLATE else None
+            rows, rejected = records_to_rows(records, meta, roles)
+            if not rows:
+                result.skipped.append(
+                    {
+                        **base,
+                        "powod": "żaden rekord nie ma poprawnych współrzędnych w Polsce "
+                        f"(odrzucone: {len(rejected)}), zasób nie wygląda na wykaz AED",
+                    }
+                )
+                continue
+            if flagged_per_dataset.get(dataset.pk, 0) > 1:  # kilka zasobów jednego zbioru: identyfikatory muszą się różnić
+                for row in rows:
+                    row["id"] = f"{row['id']}@{resource.pk}"
+            for row in rows:
+                row["_zasob_id"] = resource.pk
         except AEDSourceReadError as exc:
             result.skipped.append({**base, "powod": str(exc)})
             continue
@@ -979,7 +1394,7 @@ def build_aed_rows() -> AEDAggregationResult:
             result.skipped.append({**base, "powod": f"nieoczekiwany błąd: {exc.__class__.__name__}: {exc}"})
             continue
 
-        included_license_kinds.append(kind)
+        license_kind_by_dataset[dataset.pk] = kind
         all_rows.extend(rows)
         result.rejected.extend(rejected)
         result.sources.append(
@@ -990,6 +1405,7 @@ def build_aed_rows() -> AEDAggregationResult:
                 "zrodlo_url": meta.url,
                 "zasob_id": resource.pk,
                 "zasob_tytul": resource.title,
+                "tryb": mode,
                 "format": fmt or _resource_format(resource),
                 "odczytane": len(records),
                 "wlaczone": len(rows),
@@ -998,9 +1414,22 @@ def build_aed_rows() -> AEDAggregationResult:
         )
 
     result.rows, result.duplicates = deduplicate_rows(all_rows)
-    duplicates_per_dataset = Counter(d["zrodlo_zbior_id"] for d in result.duplicates)
+    # Liczone na zasób: jeden zbiór może mieć kilka zasobów oznaczonych flagą.
+    duplicates_per_resource = Counter(d["zasob_id"] for d in result.duplicates)
     for source in result.sources:
-        source["duplikaty"] = duplicates_per_dataset.get(source["zbior_id"], 0)
+        source["duplikaty"] = duplicates_per_resource.get(source["zasob_id"], 0)
         source["wlaczone"] -= source["duplikaty"]
-    result.license = combined_license(included_license_kinds)
+    for source in list(result.sources):
+        if source["wlaczone"] <= 0:  # wszystkie rekordy okazały się duplikatami wcześniejszych zbiorów
+            result.sources.remove(source)
+            if not any(other["zbior_id"] == source["zbior_id"] for other in result.sources):
+                license_kind_by_dataset.pop(source["zbior_id"], None)
+            result.skipped.append(
+                {
+                    "zbior_id": source["zbior_id"],
+                    "zbior_tytul": source["zbior_tytul"],
+                    "powod": f"wszystkie rekordy ({source['duplikaty']}) są duplikatami rekordów z wcześniejszych zbiorów",
+                }
+            )
+    result.license = combined_license(license_kind_by_dataset.values())
     return result

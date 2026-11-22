@@ -1763,6 +1763,11 @@ AED_DATASET_TAGS_NAMES = ["AED", "defibrylator", "defibrylatory", "pierwsza pomo
 AED_RESOURCE_DEFAULT_TITLE = "Defibrylatory AED – wykaz zbiorczy"
 AED_RESOURCE_DEFAULT_DESC = "Wykaz defibrylatorów AED połączony z danych udostępnionych w portalu dane.gov.pl."
 AED_RESOURCE_EXT_IDENT = "aed-aggregate"
+# Jak w wykazie DGA: do łączenia trafiają zasoby oznaczone flagą contains_aed_data, opublikowane i z poprawną
+# walidacją portalu (data/file/link_tasks_last_status = SUCCESS). Wyłączyć tylko tam, gdzie nie działa Celery.
+AED_REQUIRE_VALIDATION_SUCCESS = env.bool("AED_REQUIRE_VALIDATION_SUCCESS", default=True)
+# Tryb przejściowy: zbiory bez oznaczonych zasobów są nadal wykrywane po słowach (defibrylator, AED).
+AED_LEGACY_TEXT_DISCOVERY = env.bool("AED_LEGACY_TEXT_DISCOVERY", default=True)
 # Źródła dostępne tylko przez API z kluczem, np.:
 # [{"link_prefix": "https://...", "api_url": "https://...", "method": "POST",
 #   "auth_header": "Authorization", "token_env": "NAZWA_ZMIENNEJ"}]
